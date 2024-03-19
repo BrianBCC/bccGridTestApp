@@ -1,0 +1,102 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>Home</PageTitle>
+
+<h1>GridTest For Header and Filter Lines</h1>
+
+<Grid @ref="grid"
+      ElementId="myGrid"
+      TItem="MyClass"
+      Class="table table-hover table-bordered table-striped "
+      DataProvider="AssetDataProvider"
+      HeaderRowCssClass="topRow"
+      FiltersRowCssClass="topRow"
+      FixedHeader="true"
+      AllowFiltering="true"
+      AllowSorting="true"
+      AllowRowClick="true"
+
+      Responsive="true"
+      Unit="Unit.Percentage"
+      Height="100">
+
+    <GridColumn TItem="MyClass" HeaderText="First Names" PropertyName="Firstnames" SortKeySelector="item => item.Firstnames">
+        @context.Firstnames
+    </GridColumn>
+    <GridColumn TItem="MyClass" HeaderText="Last Name"  PropertyName="Lastname" SortKeySelector="item => item.Lastname">
+        @context.Lastname
+    </GridColumn>
+    <GridColumn TItem="MyClass" HeaderText="Email" PropertyName="Email" SortKeySelector="item => item.Email">
+        @context.Email
+    </GridColumn>
+    <GridColumn TItem="MyClass" HeaderText="Department" PropertyName="Department" SortKeySelector="item => item.Department">
+        @context.Department
+    </GridColumn>
+</Grid>
+<br/>
+The font size and colour of the header row is reacting properly to the topRow  CSS class but the background colour has been ignored as has everything in the Filters Row.  What am I doing wrong?
+
+@code {
+    private int? totalRecords;
+    private List<MyClass> theDataList = new List<MyClass>();
+    BlazorBootstrap.Grid<MyClass> grid = default!;
+    private List<MyClass> filteredList = new List<MyClass>();
+
+    private void LoadAssets()
+    {
+        theDataList = CreateDummyData();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadAssets();
+        totalRecords = theDataList.Count();
+    }
+
+
+    private List<MyClass> CreateDummyData()
+    {
+        List<MyClass> myClassList = new List<MyClass>();
+        myClassList.Add(new MyClass { Firstnames = "John", Lastname = "Doe", Email = "test1@test.com", Department = "IT" });
+        myClassList.Add(new MyClass { Firstnames = "Jane", Lastname = "Faraday", Email = "test2@test.com", Department = "HR" });
+        myClassList.Add(new MyClass { Firstnames = "Herbert", Lastname = "Smith", Email = "test3@test.com", Department = "IT" });
+        myClassList.Add(new MyClass { Firstnames = "Samantha", Lastname = "Jones", Email = "test4@test.com", Department = "HR" });
+        return myClassList;
+    }
+
+    private async Task<GridDataProviderResult<MyClass>> AssetDataProvider(GridDataProviderRequest<MyClass> request)
+    {
+        if (theDataList is null) // pull employees only one time for client-side filtering, sorting, and paging
+            LoadAssets(); // call a service or an API to pull the employees
+        var filteredList = await Task.FromResult(request.ApplyTo(theDataList));
+        totalRecords = filteredList.TotalCount;
+        StateHasChanged();
+        return filteredList;
+    }
+
+    public class MyClass
+    {
+        public string? Firstnames { get; set; }
+        public string? Lastname { get; set; }
+        public string? Email { get; set; }
+        public string? Department { get; set; }
+    }
+
+}
+
+<style>
+    table { font-size: 12pt; }
+
+    .table-hover tbody tr:hover td {
+        background-color: #0d75ba;
+        color: white;
+    }
+
+    .topRow {
+        background-color: yellow!important;
+        color: darkblue;
+        font-size: 16pt;
+    }
+
+</style>
